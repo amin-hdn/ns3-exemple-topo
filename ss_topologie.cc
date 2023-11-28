@@ -6,35 +6,123 @@
 #include "ns3/applications-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/netanim-module.h"
+#include "ns3/trace-helper.h"
+#include <ns3/mobility-module.h>
+
 
 using namespace ns3;
+NS_LOG_COMPONENT_DEFINE("log_ss_topo");
+
+
 int
 main (int argc, char *argv[])
 {
+
+  // create variable for each:
+    // link
+    // application
+    // each address
+    // 
+  // how naming work 
+    // use more naming 
+  // 
+  // simulate the fisrt scenario
+  // Create More Problems
+  // solve the firs Problem
+  // NS configuration : ##############################################
+
   Config::SetDefault("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue(true));
+  Config::SetDefault("ns3::Ipv4GlobalRouting::RandomEcmpRouting", BooleanValue(false));
 
-// To DO
-// how to satic route
-// how to create ring topology with cmsa
-// 
-	//   
-	// 
-	// 
-	// 
+  // Log enabling #####################################################
+  Time::SetResolution(Time::NS);
+
+  // LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+  // LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+  LogComponentEnable("BulkSendApplication", LOG_LEVEL_INFO);
+  LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
+  LogComponentEnable("log_ss_topo", LOG_LEVEL_INFO);
 
 
-  NS_LOG_COMPONENT_DEFINE("log_ss_topo");
+
+  CommandLine cmd(__FILE__);
+  cmd.Parse(argc, argv);
+
+ // creation Node variables ###########################################
   uint16_t port_udp = 80;
   uint32_t n_lan1 = 1;
   uint32_t n_lan2 = 2;
   uint32_t n_cylcle = 4;
   // uint32_t maxBytes_tcp_1 = 1000;
+  // uint32_t maxBytes_tcp_2 = 1000;
+  // links variables ###################################################
+          //###################################################
+    // ring LAN links :
+      // Device Attribute :
+  StringValue p2p_cycle_DataRate = StringValue("1Mbps"); // how much data will generate per second
+  TimeValue p2p_cycle_InterframeGap = TimeValue(NanoSeconds(0)) ; // = 0
+  StringValue p2p_cycle_MTU = StringValue("1500") ; // = 1500
+  // Ptr<ErrorModel> p2p_cycle_REM = ; // 0
+  // Ptr<Queue<Packet>> p2p_cycle_TxQ = ; //0
+      // Channel Attribute :
+  TimeValue p2p_cycle_Delay = TimeValue(MilliSeconds(5)) ; // = 0
+
+          //###################################################
+    //  LAN1 links :
+      // Device Attribute :
+  StringValue p2p_lan1_DataRate = StringValue("100Kbps"); // how much data will generate per second
+  TimeValue p2p_lan1_InterframeGap = TimeValue(NanoSeconds(0)); // = 0
+  StringValue p2p_lan1_MTU = StringValue("1500") ; // = 1500
+  // Ptr<ErrorModel> p2p_lan1_REM = ; // 0
+  // Ptr<Queue<Packet>> p2p_lan1_TxQ = ; //0
+      // Channel Attribute :
+  TimeValue p2p_lan1_Delay = TimeValue(MilliSeconds(5)) ; // = 0
+
+          //###################################################
+    //  LAN2 links :
+      // Device Attribute :
+  StringValue p2p_lan2_DataRate = StringValue("1Mbps"); // how much data will generate per second
+  TimeValue p2p_lan2_InterframeGap = TimeValue(NanoSeconds(0)); // = 0
+  StringValue p2p_lan2_MTU = StringValue("1500") ; // = 1500
+  // Ptr<ErrorModel> p2p_lan2_REM = ; // 0
+  // Ptr<Queue<Packet>> p2p_lan2_TxQ = ; //0
+      // Channel Attribute :
+  TimeValue p2p_lan2_Delay = TimeValue(MilliSeconds(5)) ; // = 0
+
+          //###################################################
+    //  From R1 to R2 links :
+      // Device Attribute :
+  StringValue p2p_r1r2_DataRate = StringValue("1Mbps"); // how much data will generate per second
+  TimeValue p2p_r1r2_InterframeGap = TimeValue(NanoSeconds(0)); // = 0
+  StringValue p2p_r1r2_MTU = StringValue("1500") ; // = 1500
+  // Ptr<ErrorModel> p2p_r1r2_REM = ; // 0
+  // Ptr<Queue<Packet>> p2p_r1r2_TxQ = ; //0
+      // Channel Attribute :
+  TimeValue p2p_r1r2_Delay = TimeValue(MilliSeconds(12)) ; // = 0
+
+          //###################################################
+        //  From R1 to R2 links :
+      // Device Attribute :
+  StringValue p2p_r2r3_DataRate = StringValue("1Mbps"); // how much data will generate per second
+  TimeValue p2p_r2r3_InterframeGap = TimeValue(NanoSeconds(0)); // = 0
+  StringValue p2p_r2r3_MTU = StringValue("1500") ; // = 1500
+  // Ptr<ErrorModel> p2p_r2r3_REM = ; // 0
+  // Ptr<Queue<Packet>> p2p_r2r3_TxQ = ; //0
+      // Channel Attribute :
+  TimeValue p2p_r2r3_Delay = TimeValue(MilliSeconds(12)); // = 0
+
+
+
+  // Applications variables ###################################################
+
+  uint32_t maxBytes_tcp_1 = 1000;
+  uint32_t maxBytes_tcp_2 = 4000;
 
   //////////////////////// Create Nodes ///////////////////////////////////
   /////////////////////////////////////////////////////////////////////////
 
     //For the cyclique netwrok 
-
+  std::cout << "Network start" << std::endl;  
   NodeContainer cycle_nodes;
   cycle_nodes.Create(n_cylcle);
   Ptr<Node> node_0_cycle = cycle_nodes.Get(0);
@@ -80,65 +168,131 @@ main (int argc, char *argv[])
   // joint an element of cycle_nodes to LAN1
   lan1_nodes.Add(lastnode_cycle);
   NS_LOG_INFO("Done : join lastnode_cycle to LAN1 ");
+
+
+  MobilityHelper mobility;
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install(cycle_nodes);
+  mobility.Install(router_nodes);
+  mobility.Install(lan1_nodes);
+  mobility.Install(lan2_nodes);
+
   NS_LOG_INFO("Done : nodes creation ");
 
   std::cout << "Netwrok Done" << std::endl;  
   //////////////////////// install links between devices ///////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////
   // ring lan1_devices
+  std::cout << "links between devices start" << std::endl;  
+
+ 
 
   PointToPointHelper p2p_cycle;
-  p2p_cycle.SetDeviceAttribute("DataRate",StringValue("1Gbps"));
-  p2p_cycle.SetChannelAttribute("Delay", TimeValue(NanoSeconds(2000)));
+  p2p_cycle.SetDeviceAttribute("DataRate",p2p_cycle_DataRate);
+  p2p_cycle.SetDeviceAttribute("Mtu", p2p_cycle_MTU); // =1500
+  p2p_cycle.SetDeviceAttribute("InterframeGap", p2p_cycle_InterframeGap); 
+  // p2p_cycle.SetDeviceAttribute("ReceiveErrorModel", );
   
-  NetDeviceContainer cycle_devices;
+  // p2p_cycle.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
 
-  cycle_devices = p2p_cycle.Install(node_0_cycle,node_1_cycle);
-  cycle_devices.Add(p2p_cycle.Install(node_1_cycle,node_2_cycle));
-  cycle_devices.Add(p2p_cycle.Install(node_2_cycle,lastnode_cycle));
-  cycle_devices.Add(p2p_cycle.Install(lastnode_cycle,node_0_cycle));
+  p2p_cycle.SetChannelAttribute("Delay", p2p_cycle_Delay); 
+
+  
+  NetDeviceContainer cycle_dev_01 = p2p_cycle.Install(node_0_cycle,node_1_cycle);
+  NetDeviceContainer cycle_dev_12 = p2p_cycle.Install(node_1_cycle,node_2_cycle);
+  NetDeviceContainer cycle_dev_23 = p2p_cycle.Install(node_2_cycle,lastnode_cycle);
+  NetDeviceContainer cycle_dev_30 = p2p_cycle.Install(lastnode_cycle,node_0_cycle);
  //   LAN1 Connection ///////////////////////////////////////////
 
+
   PointToPointHelper p2p_lan1;
-  p2p_lan1.SetDeviceAttribute("DataRate",StringValue("1Gbps"));
-  p2p_lan1.SetChannelAttribute("Delay", TimeValue(NanoSeconds(2500)));
+  p2p_lan1.SetDeviceAttribute("DataRate",p2p_lan1_DataRate);
 
-  NetDeviceContainer lan1_devices;
-  lan1_devices = p2p_lan1.Install(node_0_lan1,r1);
-  lan1_devices = p2p_lan1.Install(lastnode_cycle,r1);
+  p2p_lan1.SetDeviceAttribute("Mtu", p2p_lan1_MTU); // =1500
+  p2p_lan1.SetDeviceAttribute("InterframeGap", p2p_lan1_InterframeGap); 
+  // p2p_lan1.SetDeviceAttribute("ReceiveErrorModel", );
+  
+  // p2p_lan1.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+
+  p2p_lan1.SetChannelAttribute("Delay", p2p_lan1_Delay);
+
+// ####################################################################### //
+// ####################################################################### //
+
+  // PointToPointHelper p2p_lan1_c4r1;
+  // p2p_lan1_c4r1.SetDeviceAttribute("DataRate",StringValue("1Gbps"));
+  // p2p_lan1_c4r1.SetChannelAttribute("Delay", TimeValue(NanoSeconds(2500)));
+
+
+
+
+  NetDeviceContainer lan1_dev_n0r1 = p2p_lan1.Install(node_0_lan1,r1);
+  NetDeviceContainer lan1_dev_c4r1 = p2p_lan1.Install(lastnode_cycle,r1);
   NS_LOG_INFO("DONE : For  LAN 1");
+
+
  //   LAN2 Connection ///////////////////////////////////////////
-  PointToPointHelper p2p_lan2;
-  p2p_lan2.SetDeviceAttribute("DataRate",StringValue("1Gbps"));
-  p2p_lan2.SetChannelAttribute("Delay", TimeValue(NanoSeconds(2500)));
-
-  NetDeviceContainer lan2_devices_1;
-  lan2_devices_1 = p2p_lan2.Install(node_0_lan2,r3);
-  lan2_devices_1.Add(p2p_lan2.Install(node_1_lan2,r3));
-
-  // NetDeviceContainer lan2_devices_2;
-  // lan2_devices_2 = p2p_lan2.Install(node_1_lan2,r3);
 
 
-  // lan2_devices = p2p_lan2.Install(node_0_lan2,node_1_lan2,r3);
+  PointToPointHelper p2p_lan2_n1r3;
+  p2p_lan2_n1r3.SetDeviceAttribute("DataRate", p2p_lan2_DataRate);
+  p2p_lan2_n1r3.SetDeviceAttribute("Mtu", p2p_lan2_MTU); // =1500
+  p2p_lan2_n1r3.SetDeviceAttribute("InterframeGap", p2p_lan2_InterframeGap); 
+  // p2p_lan2_n1r3.SetDeviceAttribute("ReceiveErrorModel", );
+
+  // p2p_lan2_n1r3.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+
+  p2p_lan2_n1r3.SetChannelAttribute("Delay", p2p_lan2_Delay);
+
+
+  PointToPointHelper p2p_lan2_n0r3;
+  p2p_lan2_n0r3.SetDeviceAttribute("DataRate", p2p_lan2_DataRate);
+  p2p_lan2_n0r3.SetDeviceAttribute("Mtu", p2p_lan2_MTU); // =1500
+  p2p_lan2_n0r3.SetDeviceAttribute("InterframeGap", p2p_lan2_InterframeGap); 
+  // p2p_lan2_n0r3.SetDeviceAttribute("ReceiveErrorModel", );
+
+  // p2p_lan2_n0r3.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+
+  p2p_lan2_n0r3.SetChannelAttribute("Delay", p2p_lan2_Delay);
+
+  NetDeviceContainer lan2_dev_n0r3 = p2p_lan2_n0r3.Install(node_0_lan2,r3);
+  NetDeviceContainer lan2_dev_n1r3 = p2p_lan2_n1r3.Install(node_1_lan2,r3);
+
 
   NS_LOG_INFO("DONE : For  LAN 2");
   // Connect The routers:
   //////////////////////////////////////////////////////////////////////
   //A PointToPoint connection between the two routers r1 and r2
+
+
   PointToPointHelper p2p_r1_r2;
-  p2p_r1_r2.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
-  p2p_r1_r2.SetChannelAttribute ("Delay", StringValue ("4ms"));
+  p2p_r1_r2.SetDeviceAttribute("DataRate", p2p_r1r2_DataRate);
+  p2p_r1_r2.SetDeviceAttribute("Mtu", p2p_r1r2_MTU); // =1500
+  p2p_r1_r2.SetDeviceAttribute("InterframeGap", p2p_r1r2_InterframeGap); 
+
+  // p2p_r1_r2.SetDeviceAttribute("ReceiveErrorModel", );
+
+  // p2p_r1_r2.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+
+  p2p_r1_r2.SetChannelAttribute("Delay", p2p_r1r2_Delay);
 
   PointToPointHelper p2p_r2_r3;
-  p2p_r2_r3.SetDeviceAttribute ("DataRate", StringValue ("10Mbps"));
-  p2p_r2_r3.SetChannelAttribute ("Delay", StringValue ("4ms"));
+  p2p_r2_r3.SetDeviceAttribute("DataRate", p2p_r2r3_DataRate);
+  p2p_r2_r3.SetDeviceAttribute("Mtu", p2p_r2r3_MTU); // =1500
+  p2p_r2_r3.SetDeviceAttribute("InterframeGap", p2p_r2r3_InterframeGap); 
+// p2p_r2_r3.SetDeviceAttribute("ReceiveErrorModel", );
 
-  NetDeviceContainer firstHopLinkDevs;
-  NetDeviceContainer secondHopLinkDevs;
-  firstHopLinkDevs = p2p_r1_r2.Install (r1, r2);
+  // p2p_r2_r3.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+
+  p2p_r2_r3.SetChannelAttribute("Delay", p2p_r2r3_Delay);
+
+  NetDeviceContainer Dev_r1r2 = p2p_r1_r2.Install (r1, r2);
+
+
+  NetDeviceContainer Dev_r2r3 = p2p_r2_r3.Install (r2, r3);
+  
   // 
-  secondHopLinkDevs = p2p_r2_r3.Install (r2, r3);
+  
   // 
   std::cout << "Links Done" << std::endl;  
 
@@ -165,38 +319,45 @@ main (int argc, char *argv[])
 
   Ipv4AddressHelper address;
 
-  //For cycle topologie
-  address.SetBase ("10.1.10.0", "255.255.255.0");
-  Ipv4InterfaceContainer cyclelan_Interfaces;
-  cyclelan_Interfaces = address.Assign (cycle_devices);
+  // For cycle topologie
+  address.SetBase ("8.0.1.0", "255.255.255.252");
+  Ipv4InterfaceContainer ring_Int_01 = address.Assign (cycle_dev_01);
+  address.SetBase ("8.1.2.0", "255.255.255.252");
+  Ipv4InterfaceContainer ring_Int_12 = address.Assign (cycle_dev_12);
+  address.SetBase ("8.2.3.0", "255.255.255.252");
+  Ipv4InterfaceContainer ring_Int_23 = address.Assign (cycle_dev_23);
+  address.SetBase ("8.3.0.0", "255.255.255.252");
+  Ipv4InterfaceContainer ring_Int_30 = address.Assign (cycle_dev_30);
 
   //For LAN 1
-  address.SetBase ("10.1.11.0", "255.255.255.0");
-  Ipv4InterfaceContainer lan1_interfaces;
-  lan1_interfaces = address.Assign (lan1_devices);
-// id =0 -> node_0_lan1, id=1 -> r1 ;
+  address.SetBase ("10.0.1.0", "255.255.255.252");
+  Ipv4InterfaceContainer lan1_int_n0r1 = address.Assign (lan1_dev_n0r1);
+  address.SetBase ("10.8.1.0", "255.255.255.252");
+  Ipv4InterfaceContainer lan1_int_c4r1 = address.Assign (lan1_dev_c4r1);
+
+  // id =0 -> node_0_lan1, id=1 -> r1 ;
 
 
   //For LAN 2
-  address.SetBase ("10.1.2.0", "255.255.255.0");
-  Ipv4InterfaceContainer lan2_interfaces_1;
-  lan2_interfaces_1 = address.Assign (lan2_devices_1) ;
+  address.SetBase ("10.0.3.0", "255.255.255.0");
+  Ipv4InterfaceContainer lan2_int_n0r3 = address.Assign (lan2_dev_n0r3) ;
+  address.SetBase ("10.1.3.0", "255.255.255.0");
+  Ipv4InterfaceContainer lan2_int_n1r3 = address.Assign (lan2_dev_n1r3) ;
+
   // ID=0 -> node_0_lan2,ID = 1 -> r3
-  // Ipv4InterfaceContainer lan2_interfaces_2;
-  // lan2_interfaces_2 = address.Assign (lan2_devices_2);
   // ID=0 -> r3,ID = 1 -> node_1_lan2
 
 
 
 
-  //For PointToPoint link routers
-  address.SetBase ("10.1.100.0", "255.255.255.0");
+  // //For PointToPoint link routers
+  address.SetBase ("100.1.2.0", "255.255.255.252");
   Ipv4InterfaceContainer router_Interfaces;
-  router_Interfaces = address.Assign (firstHopLinkDevs);
+  router_Interfaces = address.Assign (Dev_r1r2);
   // id=0 -> r1 , id=1 -> r2
-  address.SetBase ("10.1.200.0", "255.255.255.0");
+  address.SetBase ("100.2.3.0", "255.255.255.252");
   Ipv4InterfaceContainer router_Interfaces2;
-  router_Interfaces2 = address.Assign (secondHopLinkDevs);
+  router_Interfaces2 = address.Assign (Dev_r2r3);
   // id =0 -> r2 , id = 1 -> r3
   NS_LOG_INFO("Done : Assign address for all devices ");
   std::cout << "address assigned" << std::endl;  
@@ -233,63 +394,176 @@ main (int argc, char *argv[])
   std::cout << "the adrress of lastnode_cycle =" << ipaddress << std::endl; //
 
 
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   //////////////////////// install Application in devices ///////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////////////////////////
+///////////// UDP echo Application server and client ///////////// ////////////////////
 
 
-  NS_LOG_INFO("start : UDP application with node_0_lan1 and node_0_lan2 ");
+  NS_LOG_INFO("start : UDP Echo application with node_0_lan1 and node_0_lan2 ");
 
-  //Let's install a UdpEchoServer on all nodes of LAN2
- // well-known echo port number
+  Ptr<Node> server_UDP_Echo = node_0_cycle;
+  Ptr<Node> client_UDP_Echo = node_0_lan2;
+
+    uint32_t MaxPacketSize_UDP_echo = 1024;
+    Time interPacketInterval_UDP_echo = MilliSeconds(10);
+    uint32_t maxPacketCount_UDP_echo = 320;
+
+
   UdpEchoServerHelper echoServer (port_udp);
-  ApplicationContainer serverApp = echoServer.Install (NodeContainer(r1));
+  ApplicationContainer serverApp = echoServer.Install (NodeContainer(server_UDP_Echo));
   serverApp.Start (Seconds (0));
-  serverApp.Stop (Seconds (3));
-  NS_LOG_INFO("Done : UDP server ");
+  serverApp.Stop (Seconds (10));
+  NS_LOG_INFO("Done : UDP server ");  
 
 
-  // For the Client node_0_LAN1_
-  //Let's create UdpEchoClients in one LAN1's nodes.
-  Ipv4Address ServerIPAddress;
-  ServerIPAddress = r1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  // For the Client node_0_LAN1 
+  // Let's create UdpEchoClients in one LAN1's nodes.
+  Ipv4Address UDPServerIPAddress_Echo;
+  UDPServerIPAddress_Echo = server_UDP_Echo->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
 
 
-  UdpEchoClientHelper echoClient (ServerIPAddress , port_udp); // (Address of r3, port_udp)
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (100));
-  echoClient.SetAttribute ("Interval", TimeValue (MilliSeconds (200)));
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+  UdpEchoClientHelper echoClient (UDPServerIPAddress_Echo , port_udp); // (Address of r3, port_udp)
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (MaxPacketSize_UDP_echo));
+  echoClient.SetAttribute ("Interval", TimeValue (interPacketInterval_UDP_echo));
+  echoClient.SetAttribute ("PacketSize", UintegerValue (maxPacketCount_UDP_echo));
 
-  ApplicationContainer clientApps = echoClient.Install(NodeContainer(node_0_lan2));
+  ApplicationContainer clientApps = echoClient.Install(NodeContainer(client_UDP_Echo));
   clientApps.Start (Seconds (0));
-  clientApps.Stop (Seconds (2));
+  clientApps.Stop (Seconds (10));
   std::cout << "application  installed" << std::endl;  
 
   NS_LOG_INFO("Done : UDP clents ");
-  // NS_LOG_INFO("Done : UDP application with node_0_lan1 and node_0_lan2 ");
+  NS_LOG_INFO("Done : UDP application with node_0_lan1 and node_0_lan2 ");
+
+///////////// UDP Application server and client ///////////// ////////////////////
+
+    uint16_t port_udp_2 = 4000;
+    Ptr<Node> server_UDP = node_2_cycle;
+    Ptr<Node> client_UDP = node_1_lan2;
+    Ipv4Address UDPServerIPAddress = server_UDP->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+
+    uint32_t MaxPacketSize_UDP = 1024;
+    Time interPacketInterval_UDP = MilliSeconds(10);
+    uint32_t maxPacketCount_UDP = 320;
+
+    NS_LOG_INFO("Create UdpServer application on node 1.");
+
+
+
+
+    UdpServerHelper server(port_udp_2);
+    ApplicationContainer apps = server.Install(server_UDP);
+    apps.Start(Seconds(1.0));
+    apps.Stop(Seconds(10.0));
+
+    NS_LOG_INFO("Create UdpClient application on node 0 to send to node 1.");
+
+    UdpClientHelper client(UDPServerIPAddress, port_udp_2);
+    client.SetAttribute("MaxPackets", UintegerValue(maxPacketCount_UDP));
+    client.SetAttribute("Interval", TimeValue(interPacketInterval_UDP));
+    client.SetAttribute("PacketSize", UintegerValue(MaxPacketSize_UDP));
+    apps = client.Install(client_UDP);
+    apps.Start(Seconds(2.0));
+    apps.Stop(Seconds(10.0));
+
+    NS_LOG_INFO("Run Simulation.");
+
+
+///////////// TCP Application the fisrt one ///////////// ////////////////////
+  // of the client
+  NS_LOG_INFO("start : TCP application with node_0_cycle and node_2_cycle ");
+    // uint16_t port_tcp_1 = 9; // well-known echo port number
+    // Ptr<Node> source_TCP_1 = node_0_cycle;
+    // Ptr<Node> sink_TCP_1 = node_2_cycle;
+
+
+    // Ipv4Address TCP1SourceIP,TCP1SinkerIP;
+    // TCP1SourceIP = source_TCP_1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+    // TCP1SinkerIP = sink_TCP_1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+
+  //     BulkSendHelper source_1("ns3::TcpSocketFactory", InetSocketAddress(TCP1SinkerIP, port_tcp_1));
+  //     // Set the amount of data to send in bytes.  Zero is unlimited.
+  //     source_1.SetAttribute("MaxBytes", UintegerValue(maxBytes_tcp_1));
+  //     ApplicationContainer sourceApps_1 = source_1.Install(NodeContainer(node_0_cycle));
+  //     sourceApps_1.Start(Seconds(2));
+  //     sourceApps_1.Stop(Seconds(3));
+
+  // // of the server
+  //     PacketSinkHelper sink_1("ns3::TcpSocketFactory", InetSocketAddress(TCP1SourceIP, port_tcp_1));
+  //         ApplicationContainer sinkApps_1 = sink_1.Install(NodeContainer(node_2_cycle));
+  //         sinkApps_1.Start(Seconds(2.0));
+  //         sinkApps_1.Stop(Seconds(5.0));
+  NS_LOG_INFO("Done : TCP application with node_0_cycle and node_2_cycle ");
+
+  ///////////// TCP Application the second one 
+  // of the client
+  NS_LOG_INFO("start : TCP application with node_0_cycle and node_2_cycle ");
+
+  //   uint16_t port_tcp_2 = 10; 
+  //   Ipv4Address TCP2SourceIP,TCP2SinkerIP;
+  //   Ptr<Node> source_TCP_2 = node_1_cycle;
+  //   Ptr<Node> sink_TCP_2 = node_1_lan2;
+
+
+  //   TCP2SourceIP = source_TCP_2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  //   TCP2SinkerIP = sink_TCP_2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+
+  //     BulkSendHelper source_2("ns3::TcpSocketFactory", InetSocketAddress(TCP2SinkerIP, port_tcp_2));
+  //     // Set the amount of data to send in bytes.  Zero is unlimited.
+  //     source_2.SetAttribute("MaxBytes", UintegerValue(maxBytes_tcp_1));
+  //     // source_2.SetAttribute("SendSize", UintegerValue(maxBytes_tcp_2/4));
+
+  //     ApplicationContainer sourceApps_2 = source_2.Install(NodeContainer(source_TCP_2));
+  //     sourceApps_2.Start(Seconds(5.0));
+  //     sourceApps_2.Stop(Seconds(7.0));
+
+  // // of the server
+  //     PacketSinkHelper sink_2("ns3::TcpSocketFactory", InetSocketAddress(TCP2SourceIP, port_tcp_2));
+  //         ApplicationContainer sinkApps_2 = sink_2.Install(NodeContainer(sink_TCP_2));
+  //         sinkApps_2.Start(Seconds(5.0));
+  //         sinkApps_2.Stop(Seconds(8.0));
+
+  NS_LOG_INFO("start : TCP application with node_0_cycle and node_2_cycle ");
+  NS_LOG_INFO("start : copyrun ");
+
 
   //////////////////////// Routing table ////////////////////////////////////////////
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
 
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  p2p_lan2.EnablePcapAll("Devs");
+  // p2p_lan2_n0r3.EnablePcap("Devs_lan2", lan2_nodes.Get() );
+  p2p_lan1.EnablePcap("Devs_lan1", lan1_nodes.Get(0)->GetId(), 0);
+  // p2p_lan1.EnablePcapInternal("Devs", lan1_dev_n0r1.Get(1), true, true);
   // p2p_r2_r3.EnablePcapAll("secondHopLinkDevs");
-  // PcapHelper pcapHelper;
-  // pcapHelper.EnablePcap("r3_tracing", r3, true, true);
-
-
+// Simulator::Schedule(Seconds(0.5),bul &Ipv4GlobalRoutingHelper::RecomputeRoutingTables);
 Ptr<OutputStreamWrapper> routingStream =
         Create<OutputStreamWrapper>("dynamic-global-routing.routes", std::ios::out);
     Ipv4RoutingHelper::PrintRoutingTableAllAt(Seconds(6), routingStream);
 
-  AnimationInterface anim("devices.xml");
-  Simulator::Stop (Seconds (5));
+
+
+  AnimationInterface anim("Animation_Test.xml");
+    anim.SetConstantPosition (node_0_cycle  , 56.00 , 66.00 );// id=0 
+    anim.SetConstantPosition (node_1_cycle  , 48.00 , 76.00 );// id=1
+    anim.SetConstantPosition (node_2_cycle  , 39.00 , 66.00 );// id=2
+    anim.SetConstantPosition (lastnode_cycle, 48.00 , 55.00 );// id=3
+    anim.SetConstantPosition (node_0_lan1   , 8.00  , 66.00 );// id=4
+    anim.SetConstantPosition (node_0_lan2   , 62.00 , 5.00 );// id=5
+    anim.SetConstantPosition (node_1_lan2   , 11.00 , 6.00 );// id=6
+    anim.SetConstantPosition (r1            , 39.00 , 52.00 );// id=7
+    anim.SetConstantPosition (r2            , 39.00 , 33.00 );// id=8
+    anim.SetConstantPosition (r3            , 39.00 , 17.00 );// id=9
+
+    anim.EnablePacketMetadata(true);
+
+    // anim.
+
+  Simulator::Stop (Seconds (10));
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 
-
-  // lan1_devices = p2p_lan1.Install(lastnode_cycle,r1);
 }
