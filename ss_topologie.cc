@@ -8,10 +8,24 @@
 #include "ns3/netanim-module.h"
 #include "ns3/trace-helper.h"
 #include <ns3/mobility-module.h>
+#include "ns3/flow-monitor-module.h"
 
 
 using namespace ns3;
 NS_LOG_COMPONENT_DEFINE("log_ss_topo");
+
+
+// Function to print IP addresses of a node
+void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName)
+{
+    Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
+    for (uint32_t i = 1; i < ipv4->GetNInterfaces(); ++i)
+    {
+        Ipv4InterfaceAddress ifaceAddress = ipv4->GetAddress(i, 0);
+        Ipv4Address ipAddress = ifaceAddress.GetLocal();
+        std::cout << nodeName << " => node " << node->GetId() << " ==> IP address: " << ipAddress << std::endl;
+    }
+}
 
 
 int
@@ -47,6 +61,13 @@ main (int argc, char *argv[])
 
   CommandLine cmd(__FILE__);
   cmd.Parse(argc, argv);
+
+
+ // flow monitoring variables variables ###########################################
+  uint32_t SentPackets = 0;
+  uint32_t ReceivedPackets = 0;
+  uint32_t LostPackets = 0;
+
 
  // creation Node variables ###########################################
   uint16_t port_udp = 80;
@@ -362,36 +383,16 @@ main (int argc, char *argv[])
   NS_LOG_INFO("Done : Assign address for all devices ");
   std::cout << "address assigned" << std::endl;  
 
-    Ipv4Address ipaddress;
-  ipaddress = r3->GetObject<Ipv4>()->GetAddress(3,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r3 =" << ipaddress << std::endl; //
-
-  ipaddress = r3->GetObject<Ipv4>()->GetAddress(2,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r3 =" << ipaddress << std::endl; //
-
-   ipaddress = r3->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r3 =" << ipaddress << std::endl; //
-
-   ipaddress = node_0_lan2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of node_0_lan2 =" << ipaddress << std::endl; //
-
-   ipaddress = node_1_lan2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of node_1_lan2 =" << ipaddress << std::endl; //
-
-  ipaddress = r2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r2 =" << ipaddress << std::endl; //
-  ipaddress = r2->GetObject<Ipv4>()->GetAddress(2,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r2 =" << ipaddress << std::endl; //
-
-  ipaddress = r1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-  std::cout << "the adrress of r1 =" << ipaddress << std::endl; //
-
-  ipaddress = lastnode_cycle->GetObject<Ipv4>()->GetAddress(1,0).GetLocal(); // this line to get an address IP of a Node
-
-  std::cout << "the adrress of lastnode_cycle =" << ipaddress << std::endl; //
-  ipaddress = lastnode_cycle->GetObject<Ipv4>()->GetAddress(3,0).GetLocal(); // this line to get an address IP of a Node
-  
-  std::cout << "the adrress of lastnode_cycle =" << ipaddress << std::endl; //
+  PrintNodeIPAddresses(node_0_lan1, "node_0_lan1");
+  PrintNodeIPAddresses(lastnode_cycle, "lastnode_cycle");
+  PrintNodeIPAddresses(node_0_cycle, "node_0_cycle");
+  PrintNodeIPAddresses(node_1_cycle, "node_1_cycle");
+  PrintNodeIPAddresses(node_2_cycle, "node_2_cycle");
+  PrintNodeIPAddresses(node_0_lan2, "node_0_lan2");
+  PrintNodeIPAddresses(node_1_lan2, "node_1_lan2");
+  PrintNodeIPAddresses(r2, "r2");
+  PrintNodeIPAddresses(r3, "r3");
+  PrintNodeIPAddresses(r1, "r1");
 
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
@@ -530,6 +531,13 @@ main (int argc, char *argv[])
 
 
   //////////////////////// Routing table ////////////////////////////////////////////
+  //////////////////////// Flow monitoring  ////////////////////////////////////////////
+FlowMonitorHelper flow_monitorHelper;
+Ptr<FlowMonitor> monitor =flow_monitorHelper.InstallAll();
+monitor->SetAttribute("DelayBinWidth", DoubleValue(0.001));
+monitor->SetAttribute("JitterBinWidth", DoubleValue(0.001));
+monitor->SetAttribute("PacketSizeBinWidth", DoubleValue(20));
+
 
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -563,6 +571,63 @@ Ptr<OutputStreamWrapper> routingStream =
 
   Simulator::Stop (Seconds (10));
   Simulator::Run ();
+
+
+// setting up packet flow monitoring
+  monitor->CheckForLostPackets();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flow_monitorHelper.GetClassifier());
+  FlowMonitor::FlowStatsContainer stats = monitor->GetFlowStats();
+
+  uint32_t packetLost = 0.0;
+  uint32_t totalTxPackets = 0.0;
+
+  double averageFlowThroughput = 0.0;
+  double averageFlowDelay = 0.0;
+
+  double flowDuration = 10;
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(i->first);
+
+    std::stringstream protoStream;
+    protoStream << (uint16_t)t.protocol;
+    // if (t.protocol == 17) {
+    //   protoStream.str("UDP");
+    // }
+
+    std::cout << "Flow " << i->first << " (" << t.sourceAddress << ":" << t.sourcePort << " -> " << t.destinationAddress << ":" << t.destinationPort << ") proto " << protoStream.str() << "\n";
+
+    packetLost += (i->second.txPackets - i->second.rxPackets);
+    totalTxPackets += i->second.txPackets;
+
+    if (i->second.rxPackets > 0) {
+      averageFlowThroughput += i->second.rxBytes * 8.0 / flowDuration / 1000 / 1000;
+      averageFlowDelay += 1000 * i->second.delaySum.GetSeconds() / i->second.rxPackets;
+
+      std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / flowDuration / 1000 / 1000 << " Mbps\n" << std::endl;
+      std::cout << "  Loss Rate: " << 100 * ((double)i->second.txPackets - (double)i->second.rxPackets) / (double)i->second.txPackets << " %\n" << std::endl;
+      std::cout << "  Delay: " << 1000 * i->second.delaySum.GetSeconds() / i->second.rxPackets << " ms\n\n" << std::endl;
+    }
+    else {
+      std::cout << "  Throughput: 0 Mbps\n" << std::endl;
+      std::cout << "  Loss Rate: 100%\n" << std::endl;
+      std::cout << "  Delay: 0 ms\n\n" << std::endl;
+    }
+  }
+
+  // extracting average packet flow data
+  std::cout << "\nMean Flow Throughput: " << averageFlowThroughput / stats.size() << " Mbps\n" << std::endl;
+  std::cout << "Mean Packet Loss Rate: " << 100 * (double)packetLost / (double)totalTxPackets << " %\n" << std::endl;
+  std::cout << "Mean Flow Delay: " << averageFlowDelay / stats.size() << " ms\n" << std::endl;
+
+  // outFile.close();
+
+  // std::ifstream f(filename.c_str());
+  // if (f.is_open()) {
+  //   std::cout << f.rdbuf();
+  // }
+  // monitor->SerializeToXmlFile("ss_topologie.xml", true , true);
+
   Simulator::Destroy ();
   return 0;
 
