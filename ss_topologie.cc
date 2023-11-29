@@ -53,9 +53,9 @@ main (int argc, char *argv[])
 
   // LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
   // LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
-  LogComponentEnable("BulkSendApplication", LOG_LEVEL_INFO);
-  LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
-  LogComponentEnable("log_ss_topo", LOG_LEVEL_INFO);
+  // LogComponentEnable("BulkSendApplication", LOG_LEVEL_INFO);
+  // LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
+  // LogComponentEnable("log_ss_topo", LOG_LEVEL_INFO);
 
 
 
@@ -70,7 +70,6 @@ main (int argc, char *argv[])
 
 
  // creation Node variables ###########################################
-  uint16_t port_udp = 80;
   uint32_t n_lan1 = 1;
   uint32_t n_lan2 = 2;
   uint32_t n_cylcle = 4;
@@ -91,11 +90,11 @@ main (int argc, char *argv[])
           //###################################################
     //  LAN1 links :
       // Device Attribute :
-  StringValue p2p_lan1_DataRate = StringValue("100Kbps"); // how much data will generate per second
+  StringValue p2p_lan1_DataRate = StringValue("1Mbps"); // how much data will generate per second
   TimeValue p2p_lan1_InterframeGap = TimeValue(NanoSeconds(0)); // = 0
   StringValue p2p_lan1_MTU = StringValue("1500") ; // = 1500
   // Ptr<ErrorModel> p2p_lan1_REM = ; // 0
-  // Ptr<Queue<Packet>> p2p_lan1_TxQ = ; //0
+  // Ptr<Queue<Packet>> p2p_lan1_TxQ = 100 ; //0
       // Channel Attribute :
   TimeValue p2p_lan1_Delay = TimeValue(MilliSeconds(5)) ; // = 0
 
@@ -214,7 +213,7 @@ main (int argc, char *argv[])
   p2p_cycle.SetDeviceAttribute("InterframeGap", p2p_cycle_InterframeGap); 
   // p2p_cycle.SetDeviceAttribute("ReceiveErrorModel", );
   
-  // p2p_cycle.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("50p"));
+  // p2p_cycle.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("1p"));
 
   p2p_cycle.SetChannelAttribute("Delay", p2p_cycle_Delay); 
 
@@ -240,15 +239,16 @@ main (int argc, char *argv[])
 // ####################################################################### //
 // ####################################################################### //
 
-  // PointToPointHelper p2p_lan1_c4r1;
-  // p2p_lan1_c4r1.SetDeviceAttribute("DataRate",StringValue("1Gbps"));
-  // p2p_lan1_c4r1.SetChannelAttribute("Delay", TimeValue(NanoSeconds(2500)));
+  PointToPointHelper p2p_lan1_c4r1;
+  p2p_lan1_c4r1.SetDeviceAttribute("DataRate",StringValue("750Kbps"));
+  p2p_lan1_c4r1.SetChannelAttribute("Delay", TimeValue(p2p_lan1_Delay));
+  // p2p_lan1_c4r1.SetQueue("ns3::DropTailQueue", "MaxSize", StringValue("1p"));
 
 
 
 
   NetDeviceContainer lan1_dev_n0r1 = p2p_lan1.Install(node_0_lan1,r1);
-  NetDeviceContainer lan1_dev_c4r1 = p2p_lan1.Install(lastnode_cycle,r1);
+  NetDeviceContainer lan1_dev_c4r1 = p2p_lan1_c4r1.Install(lastnode_cycle,r1);
   NS_LOG_INFO("DONE : For  LAN 1");
 
 
@@ -383,16 +383,16 @@ main (int argc, char *argv[])
   NS_LOG_INFO("Done : Assign address for all devices ");
   std::cout << "address assigned" << std::endl;  
 
-  PrintNodeIPAddresses(node_0_lan1, "node_0_lan1");
-  PrintNodeIPAddresses(lastnode_cycle, "lastnode_cycle");
-  PrintNodeIPAddresses(node_0_cycle, "node_0_cycle");
-  PrintNodeIPAddresses(node_1_cycle, "node_1_cycle");
-  PrintNodeIPAddresses(node_2_cycle, "node_2_cycle");
-  PrintNodeIPAddresses(node_0_lan2, "node_0_lan2");
-  PrintNodeIPAddresses(node_1_lan2, "node_1_lan2");
-  PrintNodeIPAddresses(r2, "r2");
-  PrintNodeIPAddresses(r3, "r3");
-  PrintNodeIPAddresses(r1, "r1");
+  // PrintNodeIPAddresses(node_0_lan1, "node_0_lan1");
+  // PrintNodeIPAddresses(lastnode_cycle, "lastnode_cycle");
+  // PrintNodeIPAddresses(node_0_cycle, "node_0_cycle");
+  // PrintNodeIPAddresses(node_1_cycle, "node_1_cycle");
+  // PrintNodeIPAddresses(node_2_cycle, "node_2_cycle");
+  // PrintNodeIPAddresses(node_0_lan2, "node_0_lan2");
+  // PrintNodeIPAddresses(node_1_lan2, "node_1_lan2");
+  // PrintNodeIPAddresses(r2, "r2");
+  // PrintNodeIPAddresses(r3, "r3");
+  // PrintNodeIPAddresses(r1, "r1");
 
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
@@ -404,36 +404,39 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO("start : UDP Echo application with node_0_lan1 and node_0_lan2 ");
 
-  Ptr<Node> server_UDP_Echo = node_0_cycle;
-  Ptr<Node> client_UDP_Echo = node_0_lan2;
-
-    uint32_t MaxPacketSize_UDP_echo = 1024;
-    Time interPacketInterval_UDP_echo = MilliSeconds(10);
-    uint32_t maxPacketCount_UDP_echo = 320;
-
-
-  UdpEchoServerHelper echoServer (port_udp);
-  ApplicationContainer serverApp = echoServer.Install (NodeContainer(server_UDP_Echo));
-  serverApp.Start (Seconds (0));
-  serverApp.Stop (Seconds (10));
-  NS_LOG_INFO("Done : UDP server ");  
+  // uint16_t port_udp = 40;
+  // Ptr<Node> server_UDP_Echo = node_0_cycle;
+  // Ptr<Node> client_UDP_Echo = node_0_lan2;
+  int TimeValue_ms = 10 ;
+    // uint32_t maxPacketCount_UDP_echo = 0; // max packets the application will ssent
+    // Time interPacketInterval_UDP_echo = MilliSeconds(TimeValue_ms);
+    // uint32_t MaxPacketSize_UDP_echo = 0; //byte , 1MB = 1024 * 1024  B
+  // minmum in this packet size is = 20 Bytes (txheaderSize)
+  // std::cout << "Supposed Throughput of UdpEchoClient Application :\n  Throughput = " << (double)(MaxPacketSize_UDP_Echo*8) / (TimeValue_ms * 1024) << "Mbps" << std::endl;  
 
 
-  // For the Client node_0_LAN1 
-  // Let's create UdpEchoClients in one LAN1's nodes.
-  Ipv4Address UDPServerIPAddress_Echo;
-  UDPServerIPAddress_Echo = server_UDP_Echo->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  // UdpEchoServerHelper echoServer (port_udp);
+  // ApplicationContainer serverApp = echoServer.Install (NodeContainer(server_UDP_Echo));
+  // serverApp.Start (Seconds (0));
+  // serverApp.Stop (Seconds (1));
+  // NS_LOG_INFO("Done : UDP server ");  
 
 
-  UdpEchoClientHelper echoClient (UDPServerIPAddress_Echo , port_udp); // (Address of r3, port_udp)
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (MaxPacketSize_UDP_echo));
-  echoClient.SetAttribute ("Interval", TimeValue (interPacketInterval_UDP_echo));
-  echoClient.SetAttribute ("PacketSize", UintegerValue (maxPacketCount_UDP_echo));
+  // // For the Client node_0_LAN1 
+  // // Let's create UdpEchoClients in one LAN1's nodes.
+  // Ipv4Address UDPServerIPAddress_Echo;
+  // UDPServerIPAddress_Echo = server_UDP_Echo->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
 
-  ApplicationContainer clientApps = echoClient.Install(NodeContainer(client_UDP_Echo));
-  clientApps.Start (Seconds (0));
-  clientApps.Stop (Seconds (10));
-  std::cout << "application  installed" << std::endl;  
+
+  // UdpEchoClientHelper echoClient (UDPServerIPAddress_Echo , port_udp); // (Address of r3, port_udp)
+  // echoClient.SetAttribute ("MaxPackets", UintegerValue (maxPacketCount_UDP_echo)); // maximum number of packet that can be sent
+  // echoClient.SetAttribute ("Interval", TimeValue (interPacketInterval_UDP_echo)); // time to wait between intervale
+  // echoClient.SetAttribute ("PacketSize", UintegerValue (MaxPacketSize_UDP_echo)); // in byte a suppose
+
+  // ApplicationContainer clientApps = echoClient.Install(NodeContainer(client_UDP_Echo));
+  // clientApps.Start (Seconds (0));
+  // clientApps.Stop (Seconds (1));
+  // std::cout << "application  installed" << std::endl;  
 
   NS_LOG_INFO("Done : UDP clents ");
   NS_LOG_INFO("Done : UDP application with node_0_lan1 and node_0_lan2 ");
@@ -444,10 +447,13 @@ main (int argc, char *argv[])
     Ptr<Node> server_UDP = node_2_cycle;
     Ptr<Node> client_UDP = node_1_lan2;
     Ipv4Address UDPServerIPAddress = server_UDP->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+    TimeValue_ms = 10;
+    uint32_t MaxPacketSize_UDP = 1024; // the minimum size = txheaderSize = 12 
+    // the size above do not include the header packets ? what is this extra 28 byte in each packet
+    Time interPacketInterval_UDP = MilliSeconds(TimeValue_ms);
+    uint32_t maxPacketCount_UDP = 0;
 
-    uint32_t MaxPacketSize_UDP = 1024;
-    Time interPacketInterval_UDP = MilliSeconds(10);
-    uint32_t maxPacketCount_UDP = 320;
+    std::cout << "Supposed Throughput of UdpEchoClient Application :\n  Throughput = " << ((double)(MaxPacketSize_UDP) * 8) / (TimeValue_ms * 1024 * 1024 /1000)  << "Mbps" << std::endl;  
 
     NS_LOG_INFO("Create UdpServer application on node 1.");
 
@@ -543,13 +549,13 @@ monitor->SetAttribute("PacketSizeBinWidth", DoubleValue(20));
 
 
   // p2p_lan2_n0r3.EnablePcap("Devs_lan2", lan2_nodes.Get() );
-  p2p_lan1.EnablePcap("Devs_lan1", lan1_nodes.Get(0)->GetId(), 0);
+  p2p_lan2_n1r3.EnablePcap("Devs_lan1", node_1_lan2  ->GetId(), 0);
   // p2p_lan1.EnablePcapInternal("Devs", lan1_dev_n0r1.Get(1), true, true);
   // p2p_r2_r3.EnablePcapAll("secondHopLinkDevs");
 // Simulator::Schedule(Seconds(0.5),bul &Ipv4GlobalRoutingHelper::RecomputeRoutingTables);
-Ptr<OutputStreamWrapper> routingStream =
-        Create<OutputStreamWrapper>("dynamic-global-routing.routes", std::ios::out);
-    Ipv4RoutingHelper::PrintRoutingTableAllAt(Seconds(6), routingStream);
+// Ptr<OutputStreamWrapper> routingStream =
+//         Create<OutputStreamWrapper>("dynamic-global-routing.routes", std::ios::out);
+//     Ipv4RoutingHelper::PrintRoutingTableAllAt(Seconds(6), routingStream);
 
 
 
@@ -565,7 +571,7 @@ Ptr<OutputStreamWrapper> routingStream =
     anim.SetConstantPosition (r2            , 39.00 , 33.00 );// id=8
     anim.SetConstantPosition (r3            , 39.00 , 17.00 );// id=9
 
-    anim.EnablePacketMetadata(true);
+  //   anim.EnablePacketMetadata(true);
 
     // anim.
 
@@ -584,7 +590,7 @@ Ptr<OutputStreamWrapper> routingStream =
   double averageFlowThroughput = 0.0;
   double averageFlowDelay = 0.0;
 
-  double flowDuration = 10;
+  double flowDuration = 8;
 
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow(i->first);
@@ -601,17 +607,24 @@ Ptr<OutputStreamWrapper> routingStream =
     totalTxPackets += i->second.txPackets;
 
     if (i->second.rxPackets > 0) {
-      averageFlowThroughput += i->second.rxBytes * 8.0 / flowDuration / 1000 / 1000;
+      averageFlowThroughput += (i->second.rxBytes - i->second.rxPackets * 28 )  * 8.0 / flowDuration / 1024 / 1024;
       averageFlowDelay += 1000 * i->second.delaySum.GetSeconds() / i->second.rxPackets;
 
-      std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / flowDuration / 1000 / 1000 << " Mbps\n" << std::endl;
+      // std::cout << "  Rxbytes: " << (double)i-> second.rxBytes / 1024 / 1024<< " MB \n" << std::endl;
+      // std::cout << "  rxPackets: " << (double)i-> second.rxPackets << " p \n" << std::endl;
+      std::cout << "  BytesPerPacket: " << (double)i-> second.txBytes /(double)i-> second.txPackets << " Bpp \n" << std::endl;
+      std::cout << "  txPackets: " << (double)i->second.txPackets << " p \n" << std::endl;
+      std::cout << "  True Txbytes: " << (double)i->second.txBytes - i->second.txPackets*28    << " B \n" << std::endl;
+
+      std::cout << "  Throughput: " <<  (i->second.rxBytes - i->second.rxPackets * 28 )  * 8 / flowDuration / 1024 / 1024 << " Mbps\n" << std::endl; // with 28 is the size of the header of the udp echo packets
+
       std::cout << "  Loss Rate: " << 100 * ((double)i->second.txPackets - (double)i->second.rxPackets) / (double)i->second.txPackets << " %\n" << std::endl;
       std::cout << "  Delay: " << 1000 * i->second.delaySum.GetSeconds() / i->second.rxPackets << " ms\n\n" << std::endl;
     }
     else {
       std::cout << "  Throughput: 0 Mbps\n" << std::endl;
       std::cout << "  Loss Rate: 100%\n" << std::endl;
-      std::cout << "  Delay: 0 ms\n\n" << std::endl;
+      std::cout << "  Delay: 0 ms\n\n" << std::endl;        
     }
   }
 
