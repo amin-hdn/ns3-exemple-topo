@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // Function to print IP addresses of a node
 void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName)
 {
@@ -9,6 +10,9 @@ void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName)
         std::cout << nodeName << " => node " << node->GetId() << " ==> IP address: " << ipAddress << std::endl;
     }
 }
+=======
+void TurnOffNode(Ptr<Node> node) {
+>>>>>>> 90a97b1da3f946f2fb2e3081ed88b4cf87d23a04
 
     // Désactiver toutes les interfaces du noeud
 
@@ -28,4 +32,8 @@ void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName)
 
 
 
+<<<<<<< HEAD
 }Simulator::Schedule(Seconds(2.5), &TurnOffNode, csmaNodes2.Get(0) // node libaghi ta9tal);
+=======
+}
+>>>>>>> 90a97b1da3f946f2fb2e3081ed88b4cf87d23a04
