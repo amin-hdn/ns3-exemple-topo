@@ -1,5 +1,5 @@
 // Function to print IP addresses of a node
-void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName){
+void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName)
 {
     Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
     for (uint32_t i = 1; i < ipv4->GetNInterfaces(); ++i)
@@ -28,5 +28,4 @@ void PrintNodeIPAddresses(Ptr<Node> node, std::string nodeName){
 
 
 
-}
-Simulator::Schedule(Seconds(2.5), &TurnOffNode, csmaNodes2.Get(0) // node libaghi ta9tal);
+}Simulator::Schedule(Seconds(2.5), &TurnOffNode, csmaNodes2.Get(0) // node libaghi ta9tal);
